@@ -27,12 +27,6 @@ def get_stock_news(ticker):
                 # Append the formatted article to the news_data list
                 news_data.append(news_article)
     else:
-        return json.dumps({"message": f"No news found for {ticker}."})
+        return {"message": f"No news found for {ticker}."}
 
-    # Return the news data as a JSON string
-    return json.dumps(news_data, indent=4)
-
-if __name__ == "__main__":
-    ticker = input("Enter stock ticker: ").upper()
-    # Print the returned JSON data
-    print(get_stock_news(ticker))
+    return news_data

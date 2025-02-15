@@ -17,7 +17,7 @@ def get_earnings_yfinance(ticker):
     income_stmt = stock.quarterly_income_stmt
     financials = stock.quarterly_financials  # Use quarterly data for EPS
 
-    print(f"\nHistorical Earnings for {ticker} (Last 4 Quarters):")
+    earnings_data = []
 
     if income_stmt is not None and not income_stmt.empty:
         # Extract last 4 quarters of revenue & net income
@@ -28,7 +28,6 @@ def get_earnings_yfinance(ticker):
         eps = financials.loc["Diluted EPS"].head(4) if financials is not None else None
 
         # Prepare clean data
-        earnings_data = []
         for date in revenue.index:
             rev = safe_float(revenue[date]) / 1e9 if safe_float(revenue[date]) is not None else None
             net_inc = safe_float(net_income[date]) / 1e9 if safe_float(net_income[date]) is not None else None
@@ -36,19 +35,12 @@ def get_earnings_yfinance(ticker):
 
             # Only add rows where all values are valid
             if rev is not None and net_inc is not None and eps_value is not None:
-                earnings_data.append((date, rev, net_inc, eps_value))
-
-        # Print the cleaned earnings report
-        if earnings_data:
-            print("\nDate\t\tRevenue (Billion)\tNet Income (Billion)\tEPS")
-            print("-" * 60)
-            for date, rev, net_inc, eps_value in earnings_data:
-                print(f"{date.date()}\t${rev:.2f}B\t\t${net_inc:.2f}B\t\t{eps_value:.2f}")
-        else:
-            print("No valid earnings data available.")
-
-    else:
-        print("No historical earnings data available.")
+                earnings_data.append({
+                    "date": date.date().strftime("%Y-%m-%d"),
+                    "revenue": f"${rev:.2f}B",
+                    "net_income": f"${net_inc:.2f}B",
+                    "eps": f"{eps_value:.2f}"
+                })
 
     # Fetch upcoming earnings date and format it properly
     try:
@@ -64,8 +56,7 @@ def get_earnings_yfinance(ticker):
     except (AttributeError, KeyError, TypeError, IndexError):
         upcoming_earnings = "N/A"
 
-    print(f"\nUpcoming Earnings Date for {ticker}: {upcoming_earnings}")
-
-if __name__ == "__main__":
-    ticker = input("Enter stock ticker: ").upper()
-    get_earnings_yfinance(ticker)
+    return {
+        "earnings_data": earnings_data,
+        "upcoming_earnings": upcoming_earnings
+    }

@@ -172,9 +172,7 @@ def calculate_dcf(fcf, debt, cash, shares_outstanding, growth_rate, discount_rat
     
     return intrinsic_value_per_share, explanation
 # Main function to run DCF analysis
-def run_dcf():
-    ticker = input("Enter Stock Ticker (e.g., AAPL, MSFT): ").upper()
-    
+def run_dcf(ticker):
     try:
         # Fetch financial data
         revenue, net_income, operating_cash_flow, capex, debt, cash, shares_outstanding = get_financials(ticker)
@@ -188,13 +186,12 @@ def run_dcf():
         # Calculate DCF Valuation
         intrinsic_value, explanation = calculate_dcf(fcf, debt, cash, shares_outstanding, growth_rate, wacc, terminal_value, revenue, net_income, operating_cash_flow, capex)
 
-        print(f"\nIntrinsic Value per Share for {ticker}: ${intrinsic_value:.2f}")
-        print(explanation)
-    
-    except ValueError as e:
-        print(f"Error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
+        return {
+            "intrinsic_value_per_share": intrinsic_value,
+            "explanation": explanation
+        }
 
-# Run the model
-run_dcf()
+    except ValueError as e:
+        return {"error": str(e)}
+    except Exception as e:
+        return {"error": f"Unexpected error: {e}"}
