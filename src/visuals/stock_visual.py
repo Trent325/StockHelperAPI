@@ -44,10 +44,6 @@ try:
     # Trim the data back to the requested date range
     df = df[start_date:]
     
-    print("\nFixed DataFrame Head:")
-    print(df.head())
-    print("\nColumns:", df.columns.tolist())
-    
     if df.empty:
         print(f"Could not fetch data for {stock}. Please check the stock symbol and dates.")
         exit()
