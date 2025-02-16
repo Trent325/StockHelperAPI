@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, Response
 from flasgger import Swagger
+import yfinance as yf
 from src.reporters.news import get_stock_news  
 from src.reporters.dcf import run_dcf
 from src.reporters.earnings import get_earnings_yfinance
@@ -169,6 +170,104 @@ def generate_chart():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/stocks/options", methods=["GET"])
+def get_options_activity():
+    """
+    Get unusual options activity for a given stock.
+    ---
+    parameters:
+      - name: ticker
+        in: query
+        type: string
+        required: true
+        description: Stock ticker symbol (e.g., AAPL, TSLA)
+    responses:
+      200:
+        description: Unusual options activity
+        schema:
+          type: object
+          properties:
+            symbol:
+              type: string
+            expiration_date:
+              type: string
+            unusual_calls:
+              type: array
+              items:
+                type: object
+                properties:
+                  contractSymbol:
+                    type: string
+                  strike:
+                    type: number
+                  lastPrice:
+                    type: number
+                  volume:
+                    type: number
+                  openInterest:
+                    type: number
+                  volumeOIratio:
+                    type: number
+            unusual_puts:
+              type: array
+              items:
+                type: object
+                properties:
+                  contractSymbol:
+                    type: string
+                  strike:
+                    type: number
+                  lastPrice:
+                    type: number
+                  volume:
+                    type: number
+                  openInterest:
+                    type: number
+                  volumeOIratio:
+                    type: number
+      400:
+        description: Missing or invalid ticker parameter
+      404:
+        description: No options data available
+      500:
+        description: Internal server error
+    """
+
+    ticker = request.args.get("ticker", "").upper()
+    
+    if not ticker:
+        return jsonify({"error": "Ticker is required!"}), 400
+
+    try:
+        stock = yf.Ticker(ticker)
+        options_dates = stock.options  # List of available expiration dates
+        
+        if not options_dates:
+            return jsonify({"error": "No options data available"}), 404
+
+        # Fetch options for the nearest expiration date
+        expiration_date = options_dates[0]
+        options_chain = stock.option_chain(expiration_date)
+        calls = options_chain.calls
+        puts = options_chain.puts
+
+        # Filter for unusual activity: high volume/open interest ratio
+        def filter_unusual_options(df):
+            df["volumeOIratio"] = df["volume"] / (df["openInterest"] + 1)  # Prevent division by zero
+            return df[df["volumeOIratio"] > 2]  # Threshold for unusual activity
+
+        unusual_calls = filter_unusual_options(calls)
+        unusual_puts = filter_unusual_options(puts)
+
+        return jsonify({
+            "symbol": ticker,
+            "expiration_date": expiration_date,
+            "unusual_calls": unusual_calls.to_dict(orient="records"),
+            "unusual_puts": unusual_puts.to_dict(orient="records"),
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
