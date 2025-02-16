@@ -24,6 +24,6 @@ source myenv/bin/activate
 
 - Set up ENV variables to FMP API 
     - Value = FMP_API_KEY
-- pip install <stuff from requirements.txt>
+- pip install stuff from requirements.txt
 - python3 api.pi
 
