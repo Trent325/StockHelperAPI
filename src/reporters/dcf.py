@@ -1,6 +1,6 @@
 import requests
 import yfinance as yf
-from requests import load_dotenv
+from dotenv import load_dotenv
 import os
 
 # Load environment variables from .env

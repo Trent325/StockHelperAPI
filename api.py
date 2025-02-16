@@ -1,13 +1,45 @@
 from flask import Flask, request, jsonify, Response
+from flasgger import Swagger
 from src.reporters.news import get_stock_news  
 from src.reporters.dcf import run_dcf
 from src.reporters.earnings import get_earnings_yfinance
 from src.visuals.stock_visual import generate_stock_chart
 
 app = Flask(__name__)
+swagger = Swagger(app) 
 
 @app.route('/api/get_stock_news', methods=['GET'])
 def api_get_stock_news():
+    """
+    Get latest stock news for a given ticker.
+    ---
+    parameters:
+      - name: ticker
+        in: query
+        type: string
+        required: true
+        description: Stock ticker symbol (e.g., AAPL, TSLA)
+    responses:
+      200:
+        description: A list of news articles related to the stock
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              link:
+                type: string
+              source:
+                type: string
+              published_date:
+                type: string
+      400:
+        description: Ticker is required
+      404:
+        description: No news found for the ticker
+    """
     ticker = request.args.get('ticker', '').upper()  # Retrieve ticker from query parameters
     if not ticker:
         return jsonify({"error": "Ticker is required!"}), 400
@@ -24,6 +56,30 @@ def api_get_stock_news():
 
 @app.route('/api/get_dcf', methods=['GET'])
 def dcf_valuation():
+    """
+    Get DCF (Discounted Cash Flow) valuation for a stock.
+    ---
+    parameters:
+      - name: ticker
+        in: query
+        type: string
+        required: true
+        description: Stock ticker symbol
+    responses:
+      200:
+        description: DCF valuation result
+        schema:
+          type: object
+          properties:
+            fair_value:
+              type: number
+            current_price:
+              type: number
+            recommendation:
+              type: string
+      400:
+        description: Ticker symbol is required
+    """
     ticker = request.args.get('ticker', default='', type=str).upper()  # Get ticker from query params
     if not ticker:
         return jsonify({"error": "Ticker symbol is required"}), 400
@@ -35,6 +91,30 @@ def dcf_valuation():
 
 @app.route('/api/earnings', methods=['GET'])
 def earnings():
+    """
+    Get earnings data for a stock.
+    ---
+    parameters:
+      - name: ticker
+        in: query
+        type: string
+        required: true
+        description: Stock ticker symbol
+    responses:
+      200:
+        description: Earnings data
+        schema:
+          type: object
+          properties:
+            revenue:
+              type: number
+            net_income:
+              type: number
+            eps:
+              type: number
+      400:
+        description: Ticker symbol is required
+    """
     ticker = request.args.get('ticker', default='', type=str).upper()  # Get ticker from query params
     if not ticker:
         return jsonify({"error": "Ticker symbol is required"}), 400
@@ -46,6 +126,32 @@ def earnings():
 
 @app.route('/generate_stock_chart', methods=['GET'])
 def generate_chart():
+    """
+    Generate a stock price chart.
+    ---
+    parameters:
+      - name: ticker
+        in: query
+        type: string
+        required: true
+        description: Stock ticker symbol
+      - name: time_frame
+        in: query
+        type: string
+        required: true
+        description: Time frame for the chart (e.g., 1d, 1w, 1m)
+    responses:
+      200:
+        description: HTML chart visualization
+        content:
+          text/html:
+            schema:
+              type: string
+      400:
+        description: Missing required parameters
+      500:
+        description: Internal server error
+    """
     # Extract query parameters (ticker and time_frame)
     ticker = request.args.get('ticker')
     time_frame = request.args.get('time_frame')
