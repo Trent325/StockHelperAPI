@@ -1,0 +1,9 @@
+yfinance
+requests
+dotenv
+os
+plotly
+pandas
+numpy
+json
+flask
